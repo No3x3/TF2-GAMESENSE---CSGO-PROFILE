@@ -1,5 +1,7 @@
 # TF2GameSenSNO3
 
+!!!! NOT WORKING !!! UNDER CONSTRUCTION
+
 Aplikacja integrująca Team Fortress 2 z GameSense od SteelSeries.
 
 ## Funkcje
