@@ -10,7 +10,7 @@ class TrayApp(QApplication):
     def __init__(self, argv):
         super().__init__(argv)
         self.setQuitOnLastWindowClosed(False)
-        self.tray_icon = QSystemTrayIcon(QIcon("icon.ico"), self)
+        self.tray_icon = QSystemTrayIcon(QIcon("icon.png"), self)
         self.menu = QMenu()
         exit_action = QAction("Zamknij", self)
         exit_action.triggered.connect(self.quit)
