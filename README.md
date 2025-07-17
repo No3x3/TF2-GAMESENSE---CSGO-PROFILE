@@ -23,31 +23,15 @@ All of this happens in real-time — no polling or delay loops.
 - ✅ Systray-only (no visible window)
 - ✅ Auto-start compatible
 - ✅ Easily extendable with more TF2 event triggers
-- ✅ GitHub Actions support for building `csgo.exe`
 
 ## 🚀 Installation & Usage
 
 ### 1. **Download or Build**
 
 You can either:
-- Download a prebuilt `csgo.exe` from [GitHub Releases](#), or
-- Clone this repo and build it yourself via Python or GitHub Actions.
+- Download a prebuilt `csgo.exe` from [GitHub Releases](#)
 
-### 2. **Install Dependencies (for manual use)**
-
-```bash
-pip install -r requirements.txt
-```
-
-Then build with:
-
-```bash
-pyinstaller --onefile --noconsole --icon=icon.ico --name csgo csgo.py
-```
-
-This will output `dist/csgo.exe`.
-
-### 3. **Configure Team Fortress 2 Logging**
+### 2. **Configure Team Fortress 2 Logging**
 
 In TF2’s developer console, enable log output:
 
@@ -58,7 +42,7 @@ con_logfile "tf2_gamelog.txt"
 
 > 💡 This will write live gameplay events to a log file in your TF2 folder.
 
-### 4. **Place `csgo.exe` Anywhere & Run**
+### 3. **Place `csgo.exe` Anywhere & Run**
 
 Just double-click `csgo.exe`. It will:
 - Register with SteelSeries GameSense
