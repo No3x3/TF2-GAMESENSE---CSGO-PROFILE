@@ -10,16 +10,21 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v3
+
     - uses: actions/setup-python@v4
       with:
         python-version: '3.10'
+
     - run: |
         python -m pip install --upgrade pip
         pip install pyinstaller pystray pillow requests
+
     - run: |
-        pyinstaller --onefile --noconsole --icon=icon.ico csgo.py
+        pyinstaller --onefile --noconsole --icon=icon.ico --name csgo csgo.py
+
     - uses: actions/upload-artifact@v4
       with:
         name: csgo-windows
         path: dist/csgo.exe
+
