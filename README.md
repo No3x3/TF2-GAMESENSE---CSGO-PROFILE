@@ -1,4 +1,4 @@
-! ! ! NOT TESTED ! ! !
+! ! ! NOT TESTED ! ! ! im actually on work laptop.
 
 # `csgo.exe` – Real-Time RGB Integration for Team Fortress 2 via SteelSeries GameSense
 
