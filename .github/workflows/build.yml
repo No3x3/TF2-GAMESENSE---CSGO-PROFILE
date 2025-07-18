@@ -1,4 +1,4 @@
-name: Build csgo.exe
+name: Build cs2.exe
 
 on:
   push:
@@ -18,8 +18,8 @@ jobs:
         python -m pip install --upgrade pip
         pip install pyinstaller pyqt5 requests
     - run: |
-        pyinstaller --onefile --windowed --icon=icon.ico --name cs2 csgo.py
+        pyinstaller --onefile --windowed --icon=icon.ico --name cs2 cs2.py
     - uses: actions/upload-artifact@v4
       with:
-        name: csgo-windows
-        path: dist/csgo.exe
+        name: cs2-windows
+        path: dist/cs2.exe
