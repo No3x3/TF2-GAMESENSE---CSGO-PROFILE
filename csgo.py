@@ -48,42 +48,23 @@ TF2_EVENT_CATEGORIES = {
     ],
 }
 
-# Oficjalne eventy GameSense (CSGO)
+# Oficjalne eventy GameSense dla CSGO (nie zmieniaj tej listy!):
 GAMESENSE_EVENTS = [
     ("HEALTH", "Stan zdrowia gracza"),
     ("AMMO", "Stan amunicji gracza"),
-    ("ARMOR", "Pancerz (jeśli dostępny)"),
+    ("ARMOR", "Pancerz"),
     ("KILL", "Zabójstwo"),
     ("DEATH", "Śmierć gracza"),
     ("ASSIST", "Asysta"),
-    ("DOMINATION", "Dominacja"),
-    ("REVENGED", "Zemsta"),
     ("HEADSHOT", "Trafienie w głowę"),
-    ("BACKSTAB", "Backstab (cios w plecy)"),
-    ("FIRST_BLOOD", "Pierwsze zabójstwo rundy"),
-    ("BUILD", "Budowa (inżynier)"),
-    ("DESTROY", "Zniszczenie budowli (inżynier)"),
-    ("HEAL", "Leczenie"),
-    ("UBERCHARGE", "Ubercharge (medyk)"),
-    ("FLAG_PICKUP", "Podniesienie flagi"),
-    ("FLAG_CAPTURE", "Przejęcie flagi"),
-    ("FLAG_DROP", "Upuszczenie flagi"),
-    ("POINT_CAPTURE", "Przejęcie punktu kontrolnego"),
+    ("MVP", "Nagroda MVP"),
+    ("BOMB_PLANT", "Podłożenie bomby"),
+    ("BOMB_DEFUSE", "Rozbrojenie bomby"),
     ("BONUS", "Bonus rundy"),
     ("TAUNT", "Wykonanie gestu"),
-    ("VOTE_CAST", "Oddanie głosu"),
-    ("VOTE_PASS", "Wygrana głosowania"),
     ("RESPAWN", "Odrodzenie"),
     ("INCOMING", "Dołączenie do gry"),
 ]
-
-def all_tf2_event_choices():
-    """Lista (None, 'Nie przypisuj') + pogrupowane eventy"""
-    choices = [(None, "Nie przypisuj")]
-    for category, events in TF2_EVENT_CATEGORIES.items():
-        for code, desc in events:
-            choices.append((code, f"[{category}] {code}"))
-    return choices
 
 class EventMapWidget(QtWidgets.QWidget):
     def __init__(self, parent=None):
@@ -106,7 +87,6 @@ class EventMapWidget(QtWidgets.QWidget):
 
             # Rozwijana lista TF2
             combo = QtWidgets.QComboBox()
-            # Dodaj pogrupowane eventy
             combo.addItem("Nie przypisuj", None)
             for category, events in TF2_EVENT_CATEGORIES.items():
                 combo.insertSeparator(combo.count())
@@ -128,7 +108,6 @@ class EventMapWidget(QtWidgets.QWidget):
         layout.addWidget(save_btn)
 
     def update_desc(self, row, combo):
-        # Opis do wyświetlenia
         code = combo.currentData()
         found = None
         for events in TF2_EVENT_CATEGORIES.values():
@@ -139,7 +118,6 @@ class EventMapWidget(QtWidgets.QWidget):
         self.table.item(row, 2).setText(desc)
 
     def save_mapping(self):
-        # Generowanie mapowania
         mapping = {}
         for row, (gs_name, gs_desc) in enumerate(GAMESENSE_EVENTS):
             tf2_code = self.combo_boxes[row].currentData()
