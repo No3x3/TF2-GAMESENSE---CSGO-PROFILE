@@ -1,3 +1,2 @@
-pystray
-pillow
+pyqt5
 requests
