@@ -1,42 +1,15 @@
+
 import sys
 import os
 import json
 import glob
-import time
 import requests
 from PyQt5 import QtWidgets, QtGui, QtCore
 
 GAMESENSE_ADDRESS = "http://localhost:51234"
 GAME_NAME = "CS2"
 
-# Kategorie i eventy TF2 (do mapowania)
-TF2_EVENT_CATEGORIES = {
-    "Zabójstwa i śmierć": [
-        ("tf2_kill", "Aktywowany po zabiciu przeciwnika przez gracza."),
-        ("tf2_death", "Aktywowany po śmierci gracza."),
-        ("tf2_assist", "Aktywowany, gdy gracz asystuje w eliminacji przeciwnika."),
-        ("tf2_domination", "Aktywowany po uzyskaniu dominacji nad przeciwnikiem."),
-        ("tf2_revenged", "Aktywowany, gdy gracz mści się na przeciwniku, który nad nim dominował."),
-        ("tf2_headshot", "Aktywowany po trafieniu przeciwnika w głowę."),
-        ("tf2_backstab", "Aktywowany po zadaniu śmiertelnego ciosu z pleców jako szpieg."),
-        ("tf2_first_blood", "Aktywowany przy pierwszym zabójstwie w rundzie."),
-        ("tf2_respawn", "Aktywowany po odrodzeniu gracza."),
-    ],
-    "Cele mapy": [
-        ("tf2_flag_pickup", "Aktywowany po podniesieniu walizki (CTF) przez gracza."),
-        ("tf2_flag_capture", "Aktywowany po zdobyciu walizki przez gracza."),
-        ("tf2_flag_drop", "Aktywowany po upuszczeniu walizki przez gracza."),
-        ("tf2_point_capture", "Aktywowany po przejęciu punktu kontrolnego przez gracza."),
-    ],
-    "Inne": [
-        ("tf2_bonus", "Aktywowany po zdobyciu bonusu za rundę (np. MVP)."),
-        ("tf2_taunt", "Aktywowany po wykonaniu gestu (taunt) przez gracza."),
-        ("tf2_vote_cast", "Aktywowany po oddaniu głosu w głosowaniu."),
-        ("tf2_vote_pass", "Aktywowany po pozytywnym zakończeniu głosowania."),
-        ("tf2_incoming", "Aktywowany po dołączeniu gracza do serwera lub drużyny."),
-    ],
-}
-
+# Oficjalne eventy GameSense – po lewej
 GAMESENSE_EVENTS = [
     ("HEALTH", "Stan zdrowia gracza"),
     ("AMMO", "Stan amunicji gracza"),
@@ -52,10 +25,29 @@ GAMESENSE_EVENTS = [
     ("TAUNT", "Wykonanie gestu"),
     ("RESPAWN", "Odrodzenie"),
     ("INCOMING", "Dołączenie do gry"),
-    ("POINT_CAPTURE", "Przejęcie punktu"),
-    ("FLAG_PICKUP", "Podniesienie flagi"),
-    ("FLAG_CAPTURE", "Zdobycie flagi"),
-    ("FLAG_DROP", "Upuszczenie flagi"),
+]
+
+# Eventy TF2 – po prawej
+TF2_EVENTS = [
+    ("tf2_health", "Aktualny poziom zdrowia"),
+    ("tf2_armor", "Pancerz"),
+    ("tf2_ammo", "Amunicja"),
+    ("tf2_kill", "Zabójstwo"),
+    ("tf2_death", "Śmierć"),
+    ("tf2_assist", "Asysta"),
+    ("tf2_headshot", "Headshot"),
+    ("tf2_flag_pickup", "Podniesienie walizki"),
+    ("tf2_flag_capture", "Zdobycie walizki"),
+    ("tf2_flag_drop", "Upuszczenie walizki"),
+    ("tf2_point_capture", "Przejęcie punktu"),
+    ("tf2_backstab", "Backstab"),
+    ("tf2_domination", "Dominacja"),
+    ("tf2_revenged", "Revenge"),
+    ("tf2_first_blood", "Pierwsza krew"),
+    ("tf2_respawn", "Respawn"),
+    ("tf2_taunt", "Gest"),
+    ("tf2_incoming", "Dołączenie"),
+    ("tf2_bonus", "Bonus"),
 ]
 
 def register_gamesense():
@@ -93,7 +85,10 @@ class LogMonitorThread(QtCore.QThread):
         self.running = True
         self.current_logfile = None
         self.last_position = 0
-        self.my_nick = my_nick  # można rozwinąć, by automatycznie wykrywał nick z loga
+        self.my_nick = my_nick
+        self.last_health = None
+        self.last_armor = None
+        self.last_ammo = None
 
     def run(self):
         while self.running:
@@ -119,37 +114,98 @@ class LogMonitorThread(QtCore.QThread):
         self.running = False
 
     def process_line(self, line):
-        # Uwaga: poniżej bardzo uproszczone reguły. Dostosuj do swoich logów!
-        # Twój nick (do lepszej filtracji eventów) możesz ustawić w GUI lub tu
-        nick = self.my_nick or "Dawid"  # zmień na swój nick w TF2
         lline = line.lower()
+        nick = self.my_nick or "Dawid"  # zmień na swój nick z TF2
+
+        # HEALTH
+        if "health" in lline and any(s in lline for s in [nick.lower(), "changed", "+", "-", "="]):
+            for word in line.split():
+                if word.isdigit() and 0 < int(word) < 1000:
+                    health = int(word)
+                    if health != self.last_health:
+                        self.last_health = health
+                        self.emit_event('tf2_health', health)
+
+        # ARMOR (w TF2 to rzadkość, do samodzielnego rozbudowania jeśli używasz modyfikacji)
+        if "armor" in lline:
+            for word in line.split():
+                if word.isdigit():
+                    armor = int(word)
+                    if armor != self.last_armor:
+                        self.last_armor = armor
+                        self.emit_event('tf2_armor', armor)
+
+        # AMMO
+        if "ammo" in lline:
+            for word in line.split():
+                if word.isdigit() and int(word) < 9999:
+                    ammo = int(word)
+                    if ammo != self.last_ammo:
+                        self.last_ammo = ammo
+                        self.emit_event('tf2_ammo', ammo)
+
         # KILL
         if 'killed' in lline and '"' in lline:
             if f'"{nick}"' in lline:
                 self.emit_event('tf2_kill')
             elif 'killed' in lline and f'"{nick}"' not in lline:
                 self.emit_event('tf2_death')
+
         # HEADSHOT
         if 'headshot' in lline:
             self.emit_event('tf2_headshot')
-        # BACKSTAB
-        if 'backstab' in lline:
-            self.emit_event('tf2_backstab')
+
         # FLAG_PICKUP
         if 'picked up the intelligence' in lline:
             self.emit_event('tf2_flag_pickup')
+
         # FLAG_CAPTURE
         if 'captured the intelligence' in lline:
             self.emit_event('tf2_flag_capture')
+
         # FLAG_DROP
         if 'dropped the intelligence' in lline:
             self.emit_event('tf2_flag_drop')
+
         # POINT_CAPTURE
         if 'captured point' in lline or 'captured control point' in lline:
             self.emit_event('tf2_point_capture')
-        # ASSIST (brak bezpośrednio w logach serwerowych)
-        # RESPWAN (brak bezpośrednio, można próbować po "spawned" itd.)
-        # Inne eventy możesz dodać poniżej
+
+        # BACKSTAB
+        if 'backstab' in lline:
+            self.emit_event('tf2_backstab')
+
+        # DOMINATION
+        if 'dominated' in lline:
+            self.emit_event('tf2_domination')
+
+        # REVENGE
+        if 'got revenge' in lline or 'revenge' in lline:
+            self.emit_event('tf2_revenged')
+
+        # FIRST BLOOD
+        if 'first blood' in lline:
+            self.emit_event('tf2_first_blood')
+
+        # RESPAWN
+        if 'respawned' in lline or 'has respawned' in lline:
+            self.emit_event('tf2_respawn')
+
+        # TAUNT
+        if 'taunt' in lline:
+            self.emit_event('tf2_taunt')
+
+        # INCOMING
+        if 'joined team' in lline or 'connected' in lline:
+            self.emit_event('tf2_incoming')
+
+        # BONUS
+        if 'bonus' in lline or 'mvp' in lline:
+            self.emit_event('tf2_bonus')
+
+        # ASSIST
+        if 'assist' in lline:
+            self.emit_event('tf2_assist')
 
     def emit_event(self, tf2_event, value=None):
         self.new_event.emit(tf2_event, value)
@@ -173,10 +229,8 @@ class EventMapWidget(QtWidgets.QWidget):
 
             combo = QtWidgets.QComboBox()
             combo.addItem("Nie przypisuj", None)
-            for category, events in TF2_EVENT_CATEGORIES.items():
-                combo.insertSeparator(combo.count())
-                for code, desc in events:
-                    combo.addItem(f"{category}: {code}", code)
+            for tf2_code, tf2_desc in TF2_EVENTS:
+                combo.addItem(f"{tf2_code}", tf2_code)
             combo.setToolTip("Wybierz event TF2, który ma być przypisany.")
             combo.currentIndexChanged.connect(lambda idx, row=row, c=combo: self.update_desc(row, c))
             self.table.setCellWidget(row, 1, combo)
@@ -212,12 +266,10 @@ class EventMapWidget(QtWidgets.QWidget):
 
     def update_desc(self, row, combo):
         code = combo.currentData()
-        found = None
-        for events in TF2_EVENT_CATEGORIES.values():
-            for tf2code, desc in events:
-                if code == tf2code:
-                    found = desc
-        desc = found or "–"
+        desc = "–"
+        for tf2_code, tf2_desc in TF2_EVENTS:
+            if code == tf2_code:
+                desc = tf2_desc
         self.table.item(row, 2).setText(desc)
 
     def save_mapping(self):
@@ -282,7 +334,6 @@ class MainWindow(QtWidgets.QTabWidget):
         self.monitor_thread = None
 
     def default_logs_folder(self):
-        # Zgadujemy domyślną ścieżkę logs/ na podstawie typowych Steam Library
         possible_paths = [
             os.path.expandvars(r"%ProgramFiles(x86)%\Steam\steamapps\common\Team Fortress 2\tf\logs"),
             os.path.expandvars(r"%ProgramFiles%\Steam\steamapps\common\Team Fortress 2\tf\logs"),
@@ -292,7 +343,7 @@ class MainWindow(QtWidgets.QTabWidget):
         for p in possible_paths:
             if os.path.isdir(p):
                 return p
-        return os.path.expanduser("~/tf2logs")  # fallback
+        return os.path.expanduser("~/tf2logs")
 
     def choose_logs_folder(self):
         folder = QtWidgets.QFileDialog.getExistingDirectory(self, "Wybierz folder z logami TF2", self.logs_folder_edit.text())
