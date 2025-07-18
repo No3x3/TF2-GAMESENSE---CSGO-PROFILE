@@ -5,8 +5,10 @@ import requests
 from PyQt5 import QtWidgets, QtGui, QtCore
 
 DEFAULT_LOG_PATH = os.path.expanduser("~/tf2_gamelog.txt")
+GAMESENSE_ADDRESS = "http://localhost:51234"
+GAME_NAME = "CS2"  # <- NAJWAŻNIEJSZE!
 
-# Kategorie i eventy TF2
+# Kategorie i eventy TF2 (bez zmian)
 TF2_EVENT_CATEGORIES = {
     "Zdrowie i amunicja": [
         ("tf2_health", "Pokazuje aktualny poziom zdrowia gracza po otrzymaniu obrażeń lub leczeniu."),
@@ -48,7 +50,7 @@ TF2_EVENT_CATEGORIES = {
     ],
 }
 
-# Oficjalne eventy GameSense dla CSGO (nie zmieniaj tej listy!):
+# Oficjalne eventy GameSense dla CS2 (z GG 2024)
 GAMESENSE_EVENTS = [
     ("HEALTH", "Stan zdrowia gracza"),
     ("AMMO", "Stan amunicji gracza"),
@@ -65,6 +67,19 @@ GAMESENSE_EVENTS = [
     ("RESPAWN", "Odrodzenie"),
     ("INCOMING", "Dołączenie do gry"),
 ]
+
+def register_gamesense():
+    try:
+        # game_metadata
+        requests.post(f"{GAMESENSE_ADDRESS}/game_metadata", json={
+            "game": GAME_NAME,
+            "game_display_name": "Team Fortress 2 (via CS2)",
+            "developer": "No3x3"
+        })
+        # register_game
+        requests.post(f"{GAMESENSE_ADDRESS}/register_game", json={"game": GAME_NAME})
+    except requests.exceptions.RequestException as e:
+        pass  # ignoruj błąd, będzie obsłużony w GUI
 
 class EventMapWidget(QtWidgets.QWidget):
     def __init__(self, parent=None):
@@ -184,6 +199,9 @@ class MainWindow(QtWidgets.QTabWidget):
         self.addTab(self.settings_tab, "Ustawienia logów")
         self.addTab(self.event_map_tab, "Mapowanie eventów")
 
+        # Zarejestruj grę po starcie
+        QtCore.QTimer.singleShot(1000, register_gamesense)
+
     def choose_log_path(self):
         fname, _ = QtWidgets.QFileDialog.getSaveFileName(self, "Wybierz plik logu", self.log_path_edit.text(), "Text Files (*.txt);;All Files (*)")
         if fname:
@@ -201,7 +219,7 @@ class MainWindow(QtWidgets.QTabWidget):
 
     def check_gamesense(self):
         try:
-            requests.get("http://localhost:51234/", timeout=1)
+            requests.get(f"{GAMESENSE_ADDRESS}/", timeout=1)
             self.status_dot.setStyleSheet("color: green; font-size: 20px")
             self.status_label.setText("Połączony")
         except Exception:
