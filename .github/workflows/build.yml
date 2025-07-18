@@ -11,20 +11,15 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-
     - uses: actions/setup-python@v4
       with:
         python-version: '3.10'
-
     - run: |
         python -m pip install --upgrade pip
-        pip install pyinstaller pystray pillow requests
-
+        pip install pyinstaller pyqt5 requests
     - run: |
-        pyinstaller --onefile --noconsole --icon=icon.ico --name csgo csgo.py
-
+        pyinstaller --onefile --windowed --icon=icon.ico --name csgo csgo.py
     - uses: actions/upload-artifact@v4
       with:
         name: csgo-windows
         path: dist/csgo.exe
-
