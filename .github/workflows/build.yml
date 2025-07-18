@@ -18,7 +18,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install pyinstaller pyqt5 requests
     - run: |
-        pyinstaller --onefile --windowed --icon=icon.ico --name csgo csgo.py
+        pyinstaller --onefile --windowed --icon=icon.ico --name cs2 csgo.py
     - uses: actions/upload-artifact@v4
       with:
         name: csgo-windows
